@@ -142,11 +142,41 @@ order by c.cost desc;
 
 Export the country club data from PHPMyAdmin, and connect to a local SQLite instance from Jupyter notebook 
 for the following questions.  
+*/
 
+bookings = pd.read_sql_table('bookings', con=engine)
+facilities = pd.read_sql_table('facilities', con=engine)
+members = pd.read_sql_table('members', con=engine)
+
+/*
 QUESTIONS:
 /* Q10: Produce a list of facilities with a total revenue less than 1000.
 The output of facility name and total revenue, sorted by revenue. Remember
 that there's a different cost for guests and members! */
+
+with revenue as (
+	select
+		b.bookid,
+		case
+			when b.memid  = 0 then (f.guestcost * b.slots)
+			when b.memid != 0 then (f.membercost * b.slots)
+		end as session_earning
+	from bookings as b
+	left join facilities as f on b.facid = f.facid
+),
+run_tot as (select
+	f.name as fac_name,
+	sum(r.session_earning) as tot_rev
+from facilities as f
+left join bookings as b on b.facid = f.facid
+left join revenue as r on r.bookid = b.bookid
+group by f.name
+order by tot_rev desc)
+select
+	rt.fac_name,
+	rt.tot_rev
+from run_tot as rt
+where rt.tot_rev < 1000;
 
 /* Q11: Produce a report of members and who recommended them in alphabetic surname,firstname order */
 
