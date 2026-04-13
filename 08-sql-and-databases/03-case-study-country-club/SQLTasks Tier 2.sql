@@ -154,7 +154,8 @@ QUESTIONS:
 The output of facility name and total revenue, sorted by revenue. Remember
 that there's a different cost for guests and members! */
 
-query = """
+query =
+"""
 with revenue as (
 	select
 		b.bookid,
@@ -185,8 +186,9 @@ revenue = pd.read_sql_query(query, engine)
 /* Q11: Produce a report of members and who recommended them in alphabetic surname,firstname order */
 
 
-query = """
-with recommenders as (
+query =
+"""
+with members_parent as (
         select
                 memid,
                 firstname,
@@ -194,13 +196,13 @@ with recommenders as (
                 nullif(recommendedby, '')::int as recid
         from members)
 select
-        concat(r.surname, ', ', r.firstname) as membername,
+        concat(p.surname, ', ', p.firstname) as membername,
 		case
-			when r.recid is not null then concat(m.surname, ', ', m.firstname)
-			when r.recid  is null then null
+			when p.recid is not null then concat(m.surname, ', ', m.firstname)
+			when p.recid  is null then null
 		end as recommender
-from recommenders as r
-left join members as m on r.recid = m.memid
+from members_parent as p
+left join members as m on p.recid = m.memid
 order by membername asc;
 """
 
@@ -209,6 +211,64 @@ members_recommenders = pd.read_sql_query(query, engine)
 
 /* Q12: Find the facilities with their usage by member, but not guests */
 
+query =
+"""
+with book_lim as (
+	select
+		b.bookid,
+		b.facid,
+		b.starttime,
+		b.memid
+	from bookings as b
+	where b.memid != 0
+),
+usage_list as (
+	select
+		concat(f.name, ': ', m.firstname, ', ', m.surname) as list
+	from facilities as f
+	left join book_lim as b on b.facid = f.facid
+	left join members as m on b.memid = m.memid
+	group by list, b.bookid
+	order by list
+)
+select
+	u.list,
+	count(*) as total_each
+from usage_list as u
+group by u.list
+order by u.list;
+"""
+
+usage_by_member = pd.read_sql_query(query, engine)
 
 /* Q13: Find the facilities usage by month, but not guests */
 
+query =
+"""
+with book_lim as (
+	select
+		b.bookid,
+		b.facid,
+		to_char(b.starttime::timestamp, 'YYYY-MM') as y_m
+		/*b.memid*/
+	from bookings as b
+	where b.memid != 0
+),
+usage_list as (
+	select	
+		concat(f.name, ': ', b.y_m) as list
+	from facilities as f
+	left join book_lim as b on b.facid = f.facid
+/*	left join members as m on b.memid = m.memid*/
+	group by list, b.bookid
+	order by list
+)
+select
+	u.list,
+	count(*) as total_each
+from usage_list as u
+group by u.list
+order by u.list;
+"""
+
+usage_by_month = pd.read_sql_query(query, engine)
