@@ -185,6 +185,28 @@ revenue = pd.read_sql_query(query, engine)
 /* Q11: Produce a report of members and who recommended them in alphabetic surname,firstname order */
 
 
+query = """
+with recommenders as (
+        select
+                memid,
+                firstname,
+                surname,
+                nullif(recommendedby, '')::int as recid
+        from members)
+select
+        concat(r.surname, ', ', r.firstname) as membername,
+		case
+			when r.recid is not null then concat(m.surname, ', ', m.firstname)
+			when r.recid  is null then null
+		end as recommender
+from recommenders as r
+left join members as m on r.recid = m.memid
+order by membername asc;
+"""
+
+
+members_recommenders = pd.read_sql_query(query, engine)
+
 /* Q12: Find the facilities with their usage by member, but not guests */
 
 
