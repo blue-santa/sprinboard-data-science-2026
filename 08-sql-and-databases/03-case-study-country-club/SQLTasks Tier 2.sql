@@ -154,6 +154,7 @@ QUESTIONS:
 The output of facility name and total revenue, sorted by revenue. Remember
 that there's a different cost for guests and members! */
 
+query = """
 with revenue as (
 	select
 		b.bookid,
@@ -177,6 +178,9 @@ select
 	rt.tot_rev
 from run_tot as rt
 where rt.tot_rev < 1000;
+"""
+
+revenue = pd.read_sql_query(query, engine)
 
 /* Q11: Produce a report of members and who recommended them in alphabetic surname,firstname order */
 
