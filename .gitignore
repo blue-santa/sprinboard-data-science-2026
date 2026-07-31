@@ -4,4 +4,4 @@
 **/*.pdf#
 **/.virtual_documents/
 **/*.csv#
-
+**/.~lock*
